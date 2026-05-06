@@ -34,10 +34,17 @@ export const analyzeLeaf = async (base64Image: string, onRetry?: (msg: string) =
       body: JSON.stringify({ image: base64Image }),
     });
 
+    // CRITICAL: Detect if Vercel is sending an HTML error page (404/SPA redirect)
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new Error("DEPLOYMENT ERROR: The backend API was not found. Please ensure you uploaded the 'api' folder to Vercel.");
+    }
+
     const result = await response.json();
 
     if (response.status === 503 && retryCount < 6) {
-      const msg = `AI Hub is warming up... (${retryCount + 1}/6)`;
+      const waitTime = Math.round(result.estimated_time || 10);
+      const msg = `AI Hub is warming up... (${waitTime}s)`;
       if (onRetry) onRetry(msg);
       await new Promise(r => setTimeout(r, 8000));
       return analyzeLeaf(base64Image, onRetry, retryCount + 1);
@@ -49,20 +56,18 @@ export const analyzeLeaf = async (base64Image: string, onRetry?: (msg: string) =
       const topMatch = result[0];
       const label = topMatch.label.toLowerCase().replace(/[^a-z_]/g, '');
       const confidence = (topMatch.score * 100).toFixed(1) + "%";
-      
       const mappedData = DISEASE_MAP[label] || {
         name: topMatch.label.replace(/_/g, " "),
-        advice: "Precision diagnosis complete. Please consult an agronomist for a detailed treatment plan.",
+        advice: "Neural scan complete. Consult an expert for specific treatment.",
         severity: "medium"
       };
-
       return { ...mappedData, confidence, status: 'success' };
     }
 
     throw new Error("Invalid response from AI model.");
   } catch (err: any) {
     return {
-      name: "Neural Hub Issue",
+      name: "Neural Issue",
       confidence: "0%",
       advice: err.message,
       severity: "high",
