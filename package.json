@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "engines": {
-    "node": ">=18"
+    "node": "20.x"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.2.4",
