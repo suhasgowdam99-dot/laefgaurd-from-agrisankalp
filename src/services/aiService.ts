@@ -1,3 +1,5 @@
+import React from 'react';
+
 export interface DetectionResult {
   name: string;
   confidence: string;
@@ -7,14 +9,22 @@ export interface DetectionResult {
 }
 
 const DISEASE_MAP: Record<string, { name: string, advice: string, severity: 'low' | 'medium' | 'high' | 'none' }> = {
-  // Common classifications from ResNet and plant models
-  "leaf": { name: "Healthy Foliage", advice: "The leaf appears healthy. Continue regular irrigation and ensure proper sunlight.", severity: "none" },
-  "spotted": { name: "Leaf Spot Pathogen", advice: "Remove infected leaves. Apply organic neem oil or copper-based fungicide.", severity: "medium" },
-  "wilting": { name: "Fusarium Wilt", advice: "Check soil moisture. If soil is wet, it may be root rot; if dry, increase watering.", severity: "high" },
-  "powdery": { name: "Powdery Mildew", advice: "Improve air circulation. Spray a mix of water and baking soda or sulfur.", severity: "medium" },
-  "yellow": { name: "Nutritional Deficiency", advice: "Check nitrogen and iron levels. Apply a balanced NPK fertilizer.", severity: "low" },
-  "rust": { name: "Plant Rust", advice: "Prune affected areas immediately. Apply a sulfur-based dusting powder.", severity: "medium" },
-  "blight": { name: "Blight detected", advice: "Highly contagious. Isolate plant and apply copper fungicide immediately.", severity: "high" }
+  "apple___apple_scab": { name: "Apple Scab", advice: "Prune affected leaves and apply sulfur fungicides.", severity: "medium" },
+  "apple___black_rot": { name: "Apple Black Rot", advice: "Remove cankers and infected fruit immediately.", severity: "high" },
+  "apple___cedar_apple_rust": { name: "Cedar Apple Rust", advice: "Apply myclobutanil fungicides and remove nearby junipers.", severity: "medium" },
+  "apple___healthy": { name: "Healthy Apple", advice: "Plant is healthy. Maintain regular care.", severity: "none" },
+  "corn_(maize)___common_rust_": { name: "Corn Common Rust", advice: "Use resistant hybrids and apply fungicides if needed.", severity: "low" },
+  "corn_(maize)___healthy": { name: "Healthy Corn", advice: "No disease detected. Ensure proper nitrogen levels.", severity: "none" },
+  "grape___black_rot": { name: "Grape Black Rot", advice: "Apply copper-based fungicides after bloom.", severity: "high" },
+  "grape___healthy": { name: "Healthy Grapes", advice: "Plant is flourishing. Continue monitoring.", severity: "none" },
+  "potato___early_blight": { name: "Potato Early Blight", advice: "Rotate crops and apply chlorothalonil fungicides.", severity: "medium" },
+  "potato___late_blight": { name: "Potato Late Blight", advice: "Critical: Remove plants and apply copper sprays.", severity: "high" },
+  "potato___healthy": { name: "Healthy Potato", advice: "Plant is stable. No action required.", severity: "none" },
+  "tomato___bacterial_spot": { name: "Tomato Bacterial Spot", advice: "Apply copper bactericide and avoid wet leaves.", severity: "medium" },
+  "tomato___early_blight": { name: "Tomato Early Blight", advice: "Prune lower leaves and improve airflow.", severity: "medium" },
+  "tomato___late_blight": { name: "Tomato Late Blight", advice: "Urgent: Destroy infected plants to save the crop.", severity: "high" },
+  "tomato___leaf_mold": { name: "Tomato Leaf Mold", advice: "Reduce humidity and improve ventilation.", severity: "medium" },
+  "tomato___healthy": { name: "Healthy Tomato", advice: "Vibrant and disease-free. Keep up the good work!", severity: "none" },
 };
 
 export const analyzeLeaf = async (base64Image: string, onRetry?: (msg: string) => void, retryCount = 0): Promise<DetectionResult> => {
@@ -25,50 +35,43 @@ export const analyzeLeaf = async (base64Image: string, onRetry?: (msg: string) =
       body: JSON.stringify({ image: base64Image }),
     });
 
-    // Check for HTML response from Vercel before parsing
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      throw new Error("Vercel Gateway is busy. Please try again in 5 seconds.");
-    }
-
     const result = await response.json();
 
-    if (response.status === 503 && retryCount < 5) {
-      if (onRetry) onRetry("AI Hub is starting up...");
-      await new Promise(r => setTimeout(r, 6000));
+    // 1. Handle Model Loading (503)
+    if (response.status === 503 && retryCount < 6) {
+      const msg = `AI Hub is warming up... (${retryCount + 1}/6)`;
+      if (onRetry) onRetry(msg);
+      await new Promise(r => setTimeout(r, 8000));
       return analyzeLeaf(base64Image, onRetry, retryCount + 1);
     }
 
-    if (!response.ok) throw new Error(result.error || 'AI Bridge Timeout');
-
-    if (Array.isArray(result) && result.length > 0) {
-      const topMatch = result[0];
-      const labelStr = topMatch.label.toLowerCase();
-      
-      // Smart fuzzy matching for disease names
-      let match = { name: topMatch.label, advice: "Consult an expert for specific treatment.", severity: "medium" as const };
-      for (const key in DISEASE_MAP) {
-        if (labelStr.includes(key)) {
-          match = DISEASE_MAP[key];
-          break;
-        }
-      }
-
-      return {
-        name: match.name,
-        confidence: (topMatch.score * 100).toFixed(1) + "%",
-        advice: match.advice,
-        severity: match.severity,
-        status: 'success'
-      };
+    // 2. Handle Explicit Errors from our Bridge
+    if (!response.ok) {
+      throw new Error(result.details || result.error || 'AI Bridge rejected the request');
     }
 
-    throw new Error("AI returned empty data.");
+    // 3. Process Success
+    if (Array.isArray(result) && result.length > 0) {
+      const topMatch = result[0];
+      const label = topMatch.label.toLowerCase();
+      const confidence = (topMatch.score * 100).toFixed(1) + "%";
+      
+      const mappedData = DISEASE_MAP[label] || {
+        name: topMatch.label.replace(/___/g, " ").replace(/_/g, " "),
+        advice: "Neural analysis complete. Patterns suggest specific pathogen activity. Consult an agronomist.",
+        severity: "medium"
+      };
+
+      return { ...mappedData, confidence, status: 'success' };
+    }
+
+    throw new Error("AI Hub returned an empty result.");
   } catch (err: any) {
+    console.error("Diagnostic Error:", err);
     return {
-      name: "Neural Signal Lost",
+      name: "Diagnosis Error",
       confidence: "0%",
-      advice: `Status: ${err.message}. This usually happens when the image is too large or the AI model is sleeping.`,
+      advice: `Technical Details: ${err.message}. If this persists, verify your HF Token in Vercel settings.`,
       severity: "high",
       status: 'error'
     };
