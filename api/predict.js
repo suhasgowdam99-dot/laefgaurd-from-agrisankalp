@@ -8,57 +8,51 @@ export const config = {
 
 export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
-
-  // 1. DEBUG MODE: Help the user see what variables exist
-  if (req.method === 'GET') {
-    const keys = Object.keys(process.env).filter(k => k.includes('TOKEN') || k.includes('HF') || k.includes('VITE'));
-    return res.status(200).json({ 
-      status: 'Online', 
-      detected_env_keys: keys,
-      tip: 'If LEAFGUARD_TOKEN or HF_TOKEN is not in the list above, Vercel cannot see your variable.'
-    });
-  }
-
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
-  // 2. Try every possible name for the token
-  const token = process.env.LEAFGUARD_TOKEN || process.env.HF_TOKEN || process.env.VITE_HF_TOKEN;
-  
-  if (!token) {
-    return res.status(500).json({ 
-      error: 'AI Token Missing', 
-      details: 'The server checked for: LEAFGUARD_TOKEN, HF_TOKEN, and VITE_HF_TOKEN but found nothing.' 
-    });
-  }
-
+  // Use GEMINI_API_KEY from Vercel env
+  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
   const { image } = req.body;
+
+  if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY missing in Vercel settings.' });
   if (!image) return res.status(400).json({ error: 'No image data.' });
 
   try {
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
-    const buffer = Buffer.from(base64Data, 'base64');
 
-    const PRIMARY_URL = "https://api-inference.huggingface.co/models/vencerlanz09/plant-disease-detection";
+    // Google Gemini 1.5 Flash Endpoint
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const payload = {
+      contents: [{
+        parts: [
+          { text: "Analyze this plant leaf image. Identify the disease if any. Return ONLY a JSON object with this exact structure: { 'name': 'Disease Name or Healthy', 'confidence': 'Percentage%', 'advice': 'Short 2-sentence treatment advice', 'severity': 'low/medium/high/none' }" },
+          {
+            inline_data: {
+              mime_type: "image/jpeg",
+              data: base64Data
+            }
+          }
+        ]
+      }],
+      generationConfig: {
+        response_mime_type: "application/json",
+      }
+    };
+
+    const response = await axios.post(API_URL, payload, { timeout: 20000 });
     
-    const response = await axios.post(PRIMARY_URL, buffer, {
-      headers: { 
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/octet-stream'
-      },
-      timeout: 20000
-    });
-    
-    return res.status(200).json(response.data);
+    // Parse Gemini's structured response
+    const geminiText = response.data.candidates[0].content.parts[0].text;
+    const result = JSON.parse(geminiText);
+
+    return res.status(200).json(result);
 
   } catch (error) {
-    const status = error.response?.status || 500;
-    const details = error.response?.data?.error || error.message;
-    
-    if (status === 503) return res.status(503).json(error.response.data);
-
-    return res.status(status).json({ 
-      error: 'AI Hub Error', 
-      details: details.toString() 
+    console.error('Gemini Bridge Error:', error.message);
+    return res.status(500).json({ 
+      error: 'Gemini Hub Error', 
+      details: error.response?.data?.error?.message || error.message 
     });
   }
 }
