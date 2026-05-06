@@ -10,7 +10,6 @@ export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
-  // Use GEMINI_API_KEY from Vercel env
   const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
   const { image } = req.body;
 
@@ -20,13 +19,13 @@ export default async function handler(req, res) {
   try {
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
 
-    // Google Gemini 1.5 Flash Endpoint
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // STABLE ENDPOINT: Using v1 instead of v1beta
+    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const payload = {
       contents: [{
         parts: [
-          { text: "Analyze this plant leaf image. Identify the disease if any. Return ONLY a JSON object with this exact structure: { 'name': 'Disease Name or Healthy', 'confidence': 'Percentage%', 'advice': 'Short 2-sentence treatment advice', 'severity': 'low/medium/high/none' }" },
+          { text: "Identify the plant disease in this image. Return ONLY a JSON object: { 'name': 'Disease', 'confidence': '85%', 'advice': 'Cure instructions', 'severity': 'high/medium/low' }" },
           {
             inline_data: {
               mime_type: "image/jpeg",
@@ -34,25 +33,26 @@ export default async function handler(req, res) {
             }
           }
         ]
-      }],
-      generationConfig: {
-        response_mime_type: "application/json",
-      }
+      }]
     };
 
-    const response = await axios.post(API_URL, payload, { timeout: 20000 });
+    const response = await axios.post(API_URL, payload, { timeout: 25000 });
     
-    // Parse Gemini's structured response
-    const geminiText = response.data.candidates[0].content.parts[0].text;
-    const result = JSON.parse(geminiText);
-
+    // Improved Gemini extraction logic
+    let resultText = response.data.candidates[0].content.parts[0].text;
+    
+    // Clean JSON if Gemini adds markdown blocks
+    resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
+    
+    const result = JSON.parse(resultText);
     return res.status(200).json(result);
 
   } catch (error) {
     console.error('Gemini Bridge Error:', error.message);
+    const apiError = error.response?.data?.error?.message || error.message;
     return res.status(500).json({ 
-      error: 'Gemini Hub Error', 
-      details: error.response?.data?.error?.message || error.message 
+      error: 'Gemini Bridge Fail', 
+      details: apiError
     });
   }
 }
