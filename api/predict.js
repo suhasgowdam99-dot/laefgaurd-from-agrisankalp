@@ -13,46 +13,53 @@ export default async function handler(req, res) {
   const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
   const { image } = req.body;
 
-  if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY missing in Vercel settings.' });
-  if (!image) return res.status(400).json({ error: 'No image data.' });
+  if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY_MISSING', version: "2.1" });
 
   try {
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
 
-    // STABLE ENDPOINT: Using v1 instead of v1beta
-    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // We will try Model 1 (Flash), and if it fails, try Model 2 (Pro)
+    const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
+    let lastError = null;
 
-    const payload = {
-      contents: [{
-        parts: [
-          { text: "Identify the plant disease in this image. Return ONLY a JSON object: { 'name': 'Disease', 'confidence': '85%', 'advice': 'Cure instructions', 'severity': 'high/medium/low' }" },
-          {
-            inline_data: {
-              mime_type: "image/jpeg",
-              data: base64Data
-            }
-          }
-        ]
-      }]
-    };
+    for (const modelName of models) {
+      try {
+        const API_URL = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
+        
+        const payload = {
+          contents: [{
+            parts: [
+              { text: "Identify the plant disease in this image. Return ONLY a JSON object: { 'name': 'Disease Name', 'confidence': '95%', 'advice': 'Cure instructions', 'severity': 'high/medium/low' }" },
+              { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+            ]
+          }]
+        };
 
-    const response = await axios.post(API_URL, payload, { timeout: 25000 });
-    
-    // Improved Gemini extraction logic
-    let resultText = response.data.candidates[0].content.parts[0].text;
-    
-    // Clean JSON if Gemini adds markdown blocks
-    resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
-    
-    const result = JSON.parse(resultText);
-    return res.status(200).json(result);
+        const response = await axios.post(API_URL, payload, { timeout: 15000 });
+        
+        let resultText = response.data.candidates[0].content.parts[0].text;
+        resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
+        
+        const result = JSON.parse(resultText);
+        // Add the model name used for transparency
+        return res.status(200).json({ ...result, model: modelName, version: "2.1" });
+
+      } catch (err) {
+        lastError = err;
+        console.warn(`Model ${modelName} failed, trying next...`);
+        continue; // Try the next model
+      }
+    }
+
+    // If both fail
+    throw lastError;
 
   } catch (error) {
-    console.error('Gemini Bridge Error:', error.message);
-    const apiError = error.response?.data?.error?.message || error.message;
+    const apiMsg = error.response?.data?.error?.message || error.message;
     return res.status(500).json({ 
-      error: 'Gemini Bridge Fail', 
-      details: apiError
+      error: 'Neural Hub Offline', 
+      details: apiMsg,
+      version: "2.1"
     });
   }
 }
