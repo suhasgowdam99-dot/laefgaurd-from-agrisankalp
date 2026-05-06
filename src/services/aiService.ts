@@ -37,7 +37,6 @@ export const analyzeLeaf = async (base64Image: string, onRetry?: (msg: string) =
 
     const result = await response.json();
 
-    // 1. Handle Model Loading (503)
     if (response.status === 503 && retryCount < 6) {
       const msg = `AI Hub is warming up... (${retryCount + 1}/6)`;
       if (onRetry) onRetry(msg);
@@ -45,12 +44,10 @@ export const analyzeLeaf = async (base64Image: string, onRetry?: (msg: string) =
       return analyzeLeaf(base64Image, onRetry, retryCount + 1);
     }
 
-    // 2. Handle Explicit Errors from our Bridge
     if (!response.ok) {
       throw new Error(result.details || result.error || 'AI Bridge rejected the request');
     }
 
-    // 3. Process Success
     if (Array.isArray(result) && result.length > 0) {
       const topMatch = result[0];
       const label = topMatch.label.toLowerCase();
@@ -65,13 +62,12 @@ export const analyzeLeaf = async (base64Image: string, onRetry?: (msg: string) =
       return { ...mappedData, confidence, status: 'success' };
     }
 
-    throw new Error("AI Hub returned an empty result.");
+    throw new Error("AI Hub returned an unexpected format.");
   } catch (err: any) {
-    console.error("Diagnostic Error:", err);
     return {
-      name: "Diagnosis Error",
+      name: "Neural Guard Error",
       confidence: "0%",
-      advice: `Technical Details: ${err.message}. If this persists, verify your HF Token in Vercel settings.`,
+      advice: `Message: ${err.message}. If you have already added the token, try adding it again with the name LEAFGUARD_TOKEN.`,
       severity: "high",
       status: 'error'
     };
