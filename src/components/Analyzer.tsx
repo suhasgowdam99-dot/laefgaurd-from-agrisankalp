@@ -268,7 +268,14 @@ export const Analyzer = () => {
                            Neural Diagnosis Complete
                         </div>
                         <h3 className="text-4xl font-extrabold text-slate-900 mb-1">{result.name}</h3>
-                        <p className="text-lg font-bold text-green-600 italic">{result.confidence} Accuracy Score</p>
+                        <div className="flex items-center gap-3">
+                          <p className="text-lg font-bold text-green-600 italic">{result.confidence} Accuracy Score</p>
+                          {(result as any).source && (
+                            <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-widest ${(result as any).source.includes('Google') ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
+                              Source: {(result as any).source}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${result.severity === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-green-100 text-green-600'}`}>
                         {result.severity === 'high' ? <AlertCircle size={32} /> : <CheckCircle2 size={32} />}
