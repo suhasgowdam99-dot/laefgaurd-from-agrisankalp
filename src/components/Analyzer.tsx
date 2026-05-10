@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Loader2, CheckCircle2, AlertCircle, Camera, RefreshCw, X, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { analyzeLeaf, DetectionResult } from '../services/aiService';
+import { analyzeLocally, DetectionResult } from '../services/localAi';
 
 export const Analyzer = () => {
   const [image, setImage] = useState<string | null>(null);
@@ -107,9 +107,9 @@ export const Analyzer = () => {
       // 1. Resize image to bypass Vercel limits
       const optimizedImage = await resizeImage(image);
       
-      // 2. Send to AI
-      setStatusMessage('Connecting to Neural Hub...');
-      const detection = await analyzeLeaf(optimizedImage, (msg) => setStatusMessage(msg));
+      // 2. Process locally on Neural Engine
+      setStatusMessage('Initializing Local Neural Engine...');
+      const detection = await analyzeLocally(optimizedImage, (msg) => setStatusMessage(msg));
       setResult(detection);
     } catch (err) {
       console.error(err);
