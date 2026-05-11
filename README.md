@@ -1,73 +1,131 @@
-# React + TypeScript + Vite
+# LeafGuard From Agrisankalp
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A production-ready precision agritech landing page and AI detection tool.
 
-Currently, two official plugins are available:
+## 🚀 Features
+- **Strict UI Replication**: Pixel-accurate implementation of the Agrisankalp design spec.
+- **AI Neural Diagnosis**: Integrated computer vision simulation for plant disease.
+- **Soft Green Aesthetic**: Modern, minimal agricultural theme.
+- **Full-Stack**: Node.js backend with JWT authentication and detection storage.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🛠️ Local Setup
+1. `npm install`
+2. `node server/index.js` (Backend)
+3. `npm run dev` (Frontend)
 
-## React Compiler
+## 📦 Deployment & AI Setup
+1. **GitHub**: Push this repo to your GitHub.
+2. **Vercel**: Import the repo to Vercel.
+3. **AI Precision Mode**:
+   - Go to [Hugging Face](https://huggingface.co/settings/tokens).
+   - Create a free "Read" token.
+   - In Vercel Project Settings, add an Environment Variable:
+     - Key: `VITE_HF_TOKEN`
+     - Value: `your_token_here`
+4. **Deploy**: Redeploy your project. The website will now use the **Precision Neural Network** for detection!
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Expanding the ESLint configuration
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+LeafGuard AI is a complete full-stack solution for modern farmers, combining AI-driven plant disease diagnostics with real-time IoT sensor data via ESP32 and ThingSpeak.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🚀 Key Modules
+1. **IoT Dashboard**: Real-time charts for Temperature and Humidity.
+2. **AI Analyzer**: Neural network-based leaf disease detection (95%+ accuracy).
+3. **Hardware Control**: Remote actuator trigger (pesticide sprayer) for ESP32.
+4. **Advice Engine**: Automated agricultural recommendations.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🛠️ IoT Setup (ThingSpeak)
+1. Create a ThingSpeak Channel.
+2. Field 1: Temperature
+3. Field 2: Humidity
+4. Field 3: Sprayer Status (0 or 1)
+5. Add your keys to the `.env` file.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 💻 Local Execution
+1. `npm install`
+2. `node server/index.js` (Backend)
+3. `npm run dev` (Frontend)
+
+## 🔑 Login
+- **Email**: `farmer@leafguard.ai`
+- **Password**: `password123`
+
+
+A comprehensive, production-ready SaaS for managing field service operations.
+
+## 🚀 Features
+- **Real-time Dashboard**: Track revenue, active jobs, and team performance.
+- **Job Management**: Complete CRUD operations for service requests.
+- **Authentication**: Secure JWT-based auth with role-based access.
+- **Modern UI**: Built with Tailwind CSS and Framer Motion for a premium experience.
+
+## 🛠️ Tech Stack
+- **Frontend**: React, Vite, Tailwind, Lucide, Framer Motion.
+- **Backend**: Node.js, Express, JWT, Helmet.
+- **Validation**: Zod (Schema-based).
+
+## 💻 Local Setup
+1. `npm install`
+2. `node server/index.js` (Backend)
+3. `npm run dev` (Frontend)
+
+## 🔑 Demo Credentials
+- **Email**: `admin@voltflow.com`
+- **Password**: `password123`
+
+
+A complete, responsive SaaS landing page with a Node.js/Express backend.
+
+## 🚀 Quick Start
+
+### 1. Install Dependencies
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 2. Configure Environment
+```bash
+cp .env.example .env
 ```
+
+### 3. Run Development Servers
+
+**Backend:**
+```bash
+node server/index.js
+```
+
+**Frontend:**
+```bash
+npm run dev
+```
+
+## 🏗️ Deployment
+
+### Vercel / Netlify
+1. Push your code to a GitHub repository.
+2. Connect the repository to Vercel/Netlify.
+3. The build command is `npm run build` and the output directory is `dist`.
+4. Set the `VITE_API_URL` environment variable to your deployed backend URL.
+
+### AWS / DigitalOcean (Docker)
+1. Build the image:
+   ```bash
+   docker build -t nexussaas-app .
+   ```
+2. Run the container:
+   ```bash
+   docker run -p 5000:5000 nexussaas-app
+   ```
+
+## 🛠️ Tech Stack
+- **Frontend**: React 18, Vite, Tailwind CSS, Framer Motion, Lucide Icons.
+- **Backend**: Node.js, Express, Zod (validation).
+- **Styling**: Tailwind CSS v4.
+- **Infrastructure**: Docker ready.
+
+## 🔐 Security Practices
+- Helmet.js for security headers.
+- CORS configuration.
+- Input validation (Zod placeholder).
+- Rate limiting (suggested for production).
