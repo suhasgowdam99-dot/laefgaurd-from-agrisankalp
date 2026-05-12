@@ -76,8 +76,8 @@ export const Hero = () => {
             className="relative z-10 w-full max-w-[500px] aspect-square rounded-[3.5rem] bg-gradient-to-br from-green-100 to-white p-6 flex items-center justify-center border border-green-50 shadow-inner"
           >
             <img 
-              src="https://images.unsplash.com/photo-1597362222323-85f101ab7582?auto=format&fit=crop&q=80&w=1000" 
-              alt="Healthy Plant Leaf" 
+              src="https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&q=80&w=1000" 
+              alt="Healthy Agriculture Sample" 
               className="w-full h-full object-cover rounded-[3rem] shadow-2xl"
             />
           </motion.div>
