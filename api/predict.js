@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 export const config = {
   api: { bodyParser: { sizeLimit: '10mb' } },
 };
@@ -8,38 +6,52 @@ export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
-  const token = process.env.VITE_HF_TOKEN || process.env.HF_TOKEN;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
   const { image } = req.body;
 
-  if (!token) return res.status(500).json({ error: 'TOKEN_MISSING' });
+  if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY_MISSING' });
 
   try {
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
-    const buffer = Buffer.from(base64Data, 'base64');
 
-    // YOLO Architecture Detection Hub
-    const API_URL = "https://api-inference.huggingface.co/models/hustvl/yolos-tiny"; // Optimized for Nano-speed detection
+    // Use the absolute stable v1beta endpoint
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
-    const response = await axios.post(API_URL, buffer, {
-      headers: { Authorization: `Bearer ${token}` },
-      timeout: 15000
+    const payload = {
+      contents: [{
+        parts: [
+          { text: "You are a world-class plant pathologist. Analyze this leaf image with high precision. Identify the exact disease, including for expensive and rare crops. Return ONLY a JSON object: { 'name': 'Exact Disease Name', 'confidence': '98.5%', 'advice': 'Step-by-step professional cure instructions.', 'severity': 'high/medium/low/none' }" },
+          { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+        ]
+      }],
+      generationConfig: { response_mime_type: "application/json" }
+    };
+
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
 
-    // SILENT IOT TRIGGER:
-    // This is where we trigger your hardware silently if a disease is found
-    const results = response.data;
-    if (Array.isArray(results) && results.length > 0) {
-       // Logic: If disease confidence > 0.8, trigger the sprayer bridge
-       // fetch('https://your-site.vercel.app/api/iot?action=spray&status=1');
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error?.message || 'Google AI Hub busy');
     }
 
-    return res.status(200).json(results);
+    const resultText = data.candidates[0].content.parts[0].text;
+    const finalResult = JSON.parse(resultText);
+
+    // --- SILENT IOT TRIGGER (BACKEND ONLY) ---
+    // If disease detected, trigger sprayer silently
+    const TS_KEY = process.env.TS_WRITE_KEY;
+    if (TS_KEY && finalResult.severity === 'high') {
+      fetch(`https://api.thingspeak.com/update?api_key=${TS_KEY}&field3=1`).catch(() => {});
+    }
+
+    return res.status(200).json({ ...finalResult, source: 'Neural Hub High-Precision' });
 
   } catch (error) {
-    // Fallback for presentation
-    return res.status(200).json([
-      { label: "disease_spotted", score: 0.942 },
-      { label: "leaf_healthy", score: 0.058 }
-    ]);
+    return res.status(500).json({ error: 'Neural Signal Interrupted', details: error.message });
   }
 }

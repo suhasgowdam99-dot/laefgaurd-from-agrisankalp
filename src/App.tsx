@@ -37,7 +37,6 @@ function App() {
                   <ul className="space-y-3 text-slate-400 font-bold text-sm">
                     <li><button onClick={() => document.getElementById('detect')?.scrollIntoView({behavior: 'smooth'})} className="hover:text-green-500 transition-colors">Analyzer</button></li>
                     <li><button onClick={() => document.getElementById('how')?.scrollIntoView({behavior: 'smooth'})} className="hover:text-green-500 transition-colors">Our Process</button></li>
-                    <li><a href="#" className="hover:text-green-500 transition-colors">IoT Integration</a></li>
                   </ul>
                </div>
                <div className="space-y-4">
