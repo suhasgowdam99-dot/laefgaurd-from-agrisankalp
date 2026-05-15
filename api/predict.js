@@ -1,52 +1,64 @@
 import axios from 'axios';
 
 export const config = {
-  api: { bodyParser: { sizeLimit: '10mb' } },
+  api: { bodyParser: { sizeLimit: '8mb' } },
 };
 
 export default async function handler(req, res) {
-  res.setHeader('Content-Type', 'application/json');
-  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
-
-  const apiKey = process.env.GEMINI_API_KEY;
-  const { image } = req.body;
-
-  if (!apiKey) {
-    return res.status(500).json({ error: 'API_KEY_NOT_FOUND', advice: 'Add GEMINI_API_KEY to Vercel.' });
+  // 1. DEVOPS DIAGNOSTIC (GET REQUEST)
+  // Visit yoursite.vercel.app/api/predict in your browser to see this
+  if (req.method === 'GET') {
+    const hasKey = !!process.env.GEMINI_API_KEY;
+    return res.status(200).json({
+      status: 'API Bridge Active',
+      diagnostics: {
+        node_version: process.version,
+        gemini_key_detected: hasKey,
+        env_keys_found: Object.keys(process.env).filter(k => k.includes('KEY') || k.includes('TOKEN')),
+        region: process.env.VERCEL_REGION || 'local'
+      },
+      action: hasKey ? 'Ready to process images.' : 'ERROR: GEMINI_API_KEY is missing in Vercel settings.'
+    });
   }
 
-  try {
-    const base64Data = image.includes(',') ? image.split(',')[1] : image;
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-    // --- FINAL STABLE v1 PRODUCTION ENDPOINT ---
-    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  // 2. PRODUCTION LOGIC
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'ENV_VAR_MISSING', details: 'Vercel cannot see GEMINI_API_KEY' });
+
+  try {
+    const { image } = req.body;
+    if (!image) return res.status(400).json({ error: 'NO_IMAGE_DATA' });
+
+    const base64Data = image.split(',')[1] || image;
     
+    // Stable Endpoint
+    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
     const payload = {
       contents: [{
         parts: [
-          { text: "Identify the plant disease in this image. Return ONLY a JSON object: { 'name': 'Disease Name', 'confidence': '95%', 'advice': 'Cure advice', 'severity': 'high/medium/low' }" },
+          { text: "Analyze leaf disease. Return JSON: { 'name': 'Name', 'confidence': '95%', 'advice': 'Cure', 'severity': 'high/low' }" },
           { inline_data: { mime_type: "image/jpeg", data: base64Data } }
         ]
       }]
     };
 
-    const response = await axios.post(API_URL, payload, { timeout: 25000 });
+    const response = await axios.post(API_URL, payload, { timeout: 15000 });
     
-    // Clean potential markdown from response
-    let rawText = response.data.candidates[0].content.parts[0].text;
-    const cleanText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
-    const result = JSON.parse(cleanText);
-
-    return res.status(200).json({ ...result, source: 'Google Stable v1' });
+    let resultText = response.data.candidates[0].content.parts[0].text;
+    resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
+    
+    return res.status(200).json(JSON.parse(resultText));
 
   } catch (error) {
-    const errorMsg = error.response?.data?.error?.message || error.message;
-    console.error('Gemini v1 Error:', errorMsg);
+    const status = error.response?.status || 500;
+    const errorData = error.response?.data || error.message;
     
-    return res.status(500).json({ 
-      error: 'Neural Link Failure', 
-      details: errorMsg,
-      advice: 'Ensure your Google AI Studio project has "Generative Language API" enabled.'
+    return res.status(status).json({ 
+      error: 'UPSTREAM_AI_ERROR', 
+      details: typeof errorData === 'string' ? errorData : JSON.stringify(errorData) 
     });
   }
 }

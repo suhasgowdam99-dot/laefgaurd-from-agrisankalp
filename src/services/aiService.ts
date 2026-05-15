@@ -5,7 +5,7 @@ export interface DetectionResult {
   confidence: string;
   advice: string;
   severity: 'low' | 'medium' | 'high' | 'none';
-  status?: 'success' | 'error';
+  status?: 'loading' | 'success' | 'error';
 }
 
 export const analyzeLeaf = async (base64Image: string): Promise<DetectionResult> => {
@@ -19,16 +19,17 @@ export const analyzeLeaf = async (base64Image: string): Promise<DetectionResult>
     const result = await response.json();
 
     if (!response.ok) {
-      throw new Error(result.advice || result.details || 'Gemini link failure');
+      throw new Error(result.details || result.error || 'Server Internal Error');
     }
 
     return { ...result, status: 'success' };
+
   } catch (err: any) {
-    console.error(err);
+    console.error("Vercel Logic Error:", err);
     return {
-      name: "Neural Error",
+      name: "Deployment Diagnostic",
       confidence: "0%",
-      advice: `Critical: ${err.message}. Ensure GEMINI_API_KEY is in Vercel and redeployed.`,
+      advice: `Vercel Status: ${err.message}. To debug, visit /api/predict in your browser.`,
       severity: "high",
       status: 'error'
     };
