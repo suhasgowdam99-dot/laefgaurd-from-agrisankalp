@@ -6,48 +6,59 @@ export const config = {
 
 export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
-  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
-  // 1. Pull the official Google API Key from Vercel
+  // 1. DIAGNOSTIC MODE (For when you visit the link in browser)
+  if (req.method === 'GET') {
+    return res.status(200).json({
+      status: 'Google Cloud Bridge Active',
+      engine: 'Gemini 1.5 Pro',
+      key_detected: !!process.env.GEMINI_API_KEY,
+      tip: process.env.GEMINI_API_KEY ? 'Your key is loaded. Use the website button to scan.' : 'ERROR: GEMINI_API_KEY is missing in Vercel settings.'
+    });
+  }
+
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
   const apiKey = process.env.GEMINI_API_KEY;
   const { image } = req.body;
 
-  if (!apiKey) return res.status(500).json({ error: 'GOOGLE_LINK_INACTIVE' });
+  if (!apiKey) {
+    return res.status(500).json({ error: 'Missing API Key', advice: 'Please add GEMINI_API_KEY to Vercel and redeploy.' });
+  }
 
   try {
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
 
-    // 2. The Direct Google Cloud Vision Endpoint
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // Direct Google Cloud Vision Path (v1 Stable)
+    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
     
     const payload = {
       contents: [{
         parts: [
-          { text: "Identify the plant disease in this image. Act as a world-class Google Agriculture Expert. Provide the exact disease name, a high-accuracy confidence score, and detailed professional cure instructions. Return ONLY a JSON object: { 'name': 'Exact Disease Name', 'confidence': '99.5%', 'advice': 'Step-by-step professional instructions.' }" }
-          , { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+          { text: "Analyze this plant leaf image. If it is diseased, name the specific disease and give cure steps. If healthy, say it is healthy. Return ONLY JSON: { 'name': '...', 'confidence': '...%', 'advice': '...', 'severity': 'high/medium/low/none' }" },
+          { inline_data: { mime_type: "image/jpeg", data: base64Data } }
         ]
-      }],
-      generationConfig: { response_mime_type: "application/json" }
+      }]
     };
 
-    const response = await axios.post(API_URL, payload, { timeout: 25000 });
-    const result = JSON.parse(response.data.candidates[0].content.parts[0].text);
-
-    // SILENT HARDWARE ACTUATION
-    const TS_KEY = process.env.TS_WRITE_KEY;
-    if (TS_KEY && result.name.toLowerCase().includes('disease')) {
-      axios.get(`https://api.thingspeak.com/update?api_key=${TS_KEY}&field3=1`).catch(() => {});
+    const response = await axios.post(API_URL, payload, { timeout: 30000 });
+    
+    const resultText = response.data.candidates[0].content.parts[0].text;
+    const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+    
+    if (jsonMatch) {
+      const result = JSON.parse(jsonMatch[0]);
+      return res.status(200).json(result);
     }
-
-    return res.status(200).json({ ...result, source: 'Direct Google Intelligence' });
+    
+    throw new Error('Google returned unreadable data.');
 
   } catch (error) {
-    // Hidden Fallback ensures the website NEVER shows an error
-    return res.status(200).json({
-      name: "Healthy Plant Detected",
-      confidence: "98.7%",
-      advice: "Google Cloud Analysis confirms optimal chlorophyll density. Continue current schedule.",
-      source: "Google Cloud Services"
+    const apiError = error.response?.data?.error?.message || error.message;
+    // NO MORE FAKING: If it fails, we show the real error
+    return res.status(500).json({ 
+      error: 'Google AI Hub Error', 
+      advice: `The AI could not process the image. Reason: ${apiError}`
     });
   }
 }
