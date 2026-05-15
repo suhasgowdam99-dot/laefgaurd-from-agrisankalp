@@ -5,8 +5,7 @@ export interface DetectionResult {
   confidence: string;
   advice: string;
   severity: 'low' | 'medium' | 'high' | 'none';
-  status?: 'loading' | 'success' | 'error';
-  source?: string;
+  status?: 'success' | 'error';
 }
 
 export const analyzeLeaf = async (base64Image: string): Promise<DetectionResult> => {
@@ -20,20 +19,16 @@ export const analyzeLeaf = async (base64Image: string): Promise<DetectionResult>
     const result = await response.json();
 
     if (!response.ok) {
-      throw new Error(result.details || result.error || 'Neural Hub Timeout');
+      throw new Error(result.advice || result.details || 'Gemini link failure');
     }
 
-    return {
-      ...result,
-      status: 'success'
-    };
-
+    return { ...result, status: 'success' };
   } catch (err: any) {
-    console.error("AI Hub Error:", err);
+    console.error(err);
     return {
-      name: "Scan Interrupted",
+      name: "Neural Error",
       confidence: "0%",
-      advice: `Status: ${err.message}. Please check your GEMINI_API_KEY in Vercel.`,
+      advice: `Critical: ${err.message}. Ensure GEMINI_API_KEY is in Vercel and redeployed.`,
       severity: "high",
       status: 'error'
     };
