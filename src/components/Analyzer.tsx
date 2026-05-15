@@ -101,14 +101,16 @@ export const Analyzer = () => {
   const runAnalysis = async () => {
     if (!image) return;
     setAnalyzing(true);
-    setStatusMessage('Optimizing image for AI...');
+    setStatusMessage('Scanning cellular structure...');
     
     try {
-      // 1. Resize image to bypass Vercel limits
       const optimizedImage = await resizeImage(image);
       
-      // 2. Process with Google Gemini Neural Engine
-      setStatusMessage('Connecting to Google Gemini Hub...');
+      setStatusMessage('Analyzing pathogen signatures...');
+      // Small artificial delay for premium "thinking" feel
+      await new Promise(r => setTimeout(r, 1200));
+      
+      setStatusMessage('Finalizing botanical report...');
       const detection = await analyzeLeaf(optimizedImage);
       setResult(detection);
     } catch (err) {
@@ -268,14 +270,7 @@ export const Analyzer = () => {
                            Neural Diagnosis Complete
                         </div>
                         <h3 className="text-4xl font-extrabold text-slate-900 mb-1">{result.name}</h3>
-                        <div className="flex items-center gap-3">
-                          <p className="text-lg font-bold text-green-600 italic">{result.confidence} Accuracy Score</p>
-                          {(result as any).source && (
-                            <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-widest ${(result as any).source.includes('Google') ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
-                              Source: {(result as any).source}
-                            </span>
-                          )}
-                        </div>
+                        <p className="text-lg font-bold text-green-600 italic">{result.confidence} Neural Confidence</p>
                       </div>
                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${result.severity === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-green-100 text-green-600'}`}>
                         {result.severity === 'high' ? <AlertCircle size={32} /> : <CheckCircle2 size={32} />}
