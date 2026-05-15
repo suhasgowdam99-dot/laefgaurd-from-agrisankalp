@@ -5,7 +5,7 @@ export interface DetectionResult {
   confidence: string;
   advice: string;
   severity: 'low' | 'medium' | 'high' | 'none';
-  status?: 'loading' | 'success' | 'error';
+  status?: 'success' | 'error';
 }
 
 export const analyzeLeaf = async (base64Image: string): Promise<DetectionResult> => {
@@ -19,17 +19,16 @@ export const analyzeLeaf = async (base64Image: string): Promise<DetectionResult>
     const result = await response.json();
 
     if (!response.ok) {
-      throw new Error(result.details || result.error || 'Server Internal Error');
+      // Show the 'advice' from the backend which contains the real Google error
+      throw new Error(result.advice || result.details || 'Neural Hub Timeout');
     }
 
     return { ...result, status: 'success' };
-
   } catch (err: any) {
-    console.error("Vercel Logic Error:", err);
     return {
-      name: "Deployment Diagnostic",
+      name: "Analysis Error",
       confidence: "0%",
-      advice: `Vercel Status: ${err.message}. To debug, visit /api/predict in your browser.`,
+      advice: err.message,
       severity: "high",
       status: 'error'
     };

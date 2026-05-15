@@ -7,35 +7,29 @@ export const config = {
 export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
 
-  // 1. DIAGNOSTIC MODE (For when you visit the link in browser)
   if (req.method === 'GET') {
     return res.status(200).json({
-      status: 'Google Cloud Bridge Active',
-      engine: 'Gemini 1.5 Pro',
-      key_detected: !!process.env.GEMINI_API_KEY,
-      tip: process.env.GEMINI_API_KEY ? 'Your key is loaded. Use the website button to scan.' : 'ERROR: GEMINI_API_KEY is missing in Vercel settings.'
+      status: 'Diagnostic Mode',
+      key_present: !!process.env.GEMINI_API_KEY,
+      node: process.version
     });
   }
-
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   const apiKey = process.env.GEMINI_API_KEY;
   const { image } = req.body;
 
-  if (!apiKey) {
-    return res.status(500).json({ error: 'Missing API Key', advice: 'Please add GEMINI_API_KEY to Vercel and redeploy.' });
-  }
+  if (!apiKey) return res.status(500).json({ error: 'API_KEY_MISSING' });
 
   try {
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
 
-    // Direct Google Cloud Vision Path (v1 Stable)
+    // Use the absolute full path for the model
     const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
     
     const payload = {
       contents: [{
         parts: [
-          { text: "Analyze this plant leaf image. If it is diseased, name the specific disease and give cure steps. If healthy, say it is healthy. Return ONLY JSON: { 'name': '...', 'confidence': '...%', 'advice': '...', 'severity': 'high/medium/low/none' }" },
+          { text: "Analyze this plant leaf for disease. Return ONLY JSON: { 'name': 'Disease Name', 'confidence': '95%', 'advice': 'Cure steps', 'severity': 'high/low' }" },
           { inline_data: { mime_type: "image/jpeg", data: base64Data } }
         ]
       }]
@@ -46,19 +40,15 @@ export default async function handler(req, res) {
     const resultText = response.data.candidates[0].content.parts[0].text;
     const jsonMatch = resultText.match(/\{[\s\S]*\}/);
     
-    if (jsonMatch) {
-      const result = JSON.parse(jsonMatch[0]);
-      return res.status(200).json(result);
-    }
-    
-    throw new Error('Google returned unreadable data.');
+    return res.status(200).json(JSON.parse(jsonMatch[0]));
 
   } catch (error) {
-    const apiError = error.response?.data?.error?.message || error.message;
-    // NO MORE FAKING: If it fails, we show the real error
+    // PASS THROUGH THE EXACT ERROR FROM GOOGLE
+    const googleError = error.response?.data?.error?.message || error.message;
     return res.status(500).json({ 
-      error: 'Google AI Hub Error', 
-      advice: `The AI could not process the image. Reason: ${apiError}`
+      error: 'Google API Rejection', 
+      details: googleError,
+      advice: `Google says: "${googleError}". Check if "Generative Language API" is ENABLED in your Google Cloud Console.`
     });
   }
 }
