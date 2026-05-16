@@ -19,18 +19,14 @@ export const analyzeLeaf = async (base64Image: string): Promise<DetectionResult>
     const result = await response.json();
 
     if (!response.ok) {
-      // Show the 'advice' from the backend which contains the real Google error
-      throw new Error(result.advice || result.details || 'Neural Hub Timeout');
+      throw new Error(result.details || result.error || 'The Google Knowledge link failed.');
     }
 
     return { ...result, status: 'success' };
   } catch (err: any) {
-    return {
-      name: "Analysis Error",
-      confidence: "0%",
-      advice: err.message,
-      severity: "high",
-      status: 'error'
-    };
+    console.error("Real Error Fetching Result:", err);
+    // CRITICAL: We throw the error so the UI shows the red error box 
+    // instead of showing a 'fake' healthy result.
+    throw err;
   }
 };
