@@ -273,11 +273,11 @@ export const Analyzer = () => {
                       </div>
                       <div className="flex gap-4">
                         <button 
-                          onClick={() => window.open('https://lens.google.com/search?p=' + encodeURIComponent(image || ''), '_blank')}
-                          className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-xs hover:bg-blue-700 transition-all flex items-center gap-2"
+                          onClick={() => window.open('https://www.google.com/searchbyimage?image_url=' + encodeURIComponent(image || ''), '_blank')}
+                          className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all flex items-center gap-3"
                         >
-                          <Search size={16} />
-                          Verify on Google Lens
+                          <Search size={20} />
+                          Search on Google Lens
                         </button>
                       </div>
                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${result.severity === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-green-100 text-green-600'}`}>
