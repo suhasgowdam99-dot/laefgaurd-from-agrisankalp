@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Loader2, CheckCircle2, AlertCircle, Camera, RefreshCw, X, ShieldCheck } from 'lucide-react';
+import { Upload, Loader2, CheckCircle2, AlertCircle, Camera, RefreshCw, X, ShieldCheck, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { analyzeLeaf, DetectionResult } from '../services/aiService';
 
@@ -101,15 +101,15 @@ export const Analyzer = () => {
   const runAnalysis = async () => {
     if (!image) return;
     setAnalyzing(true);
-    setStatusMessage('Connecting to Google Cloud Services...');
+    setStatusMessage('Connecting to Google Search Engine...');
     
     try {
       const optimizedImage = await resizeImage(image);
       
-      setStatusMessage('Accessing Google Agriculture Database...');
+      setStatusMessage('Searching Google Agriculture Database...');
       await new Promise(r => setTimeout(r, 1200));
       
-      setStatusMessage('Extracting Google Neural Insights...');
+      setStatusMessage('Extracting Google Search Results...');
       const detection = await analyzeLeaf(optimizedImage);
       setResult(detection);
     } catch (err) {
@@ -269,7 +269,16 @@ export const Analyzer = () => {
                            Neural Diagnosis Complete
                         </div>
                         <h3 className="text-4xl font-extrabold text-slate-900 mb-1">{result.name}</h3>
-                        <p className="text-lg font-bold text-green-600 italic">{result.confidence} Google Neural Confidence</p>
+                        <p className="text-lg font-bold text-green-600 italic">{result.confidence} Google Search Confidence</p>
+                      </div>
+                      <div className="flex gap-4">
+                        <button 
+                          onClick={() => window.open('https://lens.google.com/search?p=' + encodeURIComponent(image || ''), '_blank')}
+                          className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-xs hover:bg-blue-700 transition-all flex items-center gap-2"
+                        >
+                          <Search size={16} />
+                          Verify on Google Lens
+                        </button>
                       </div>
                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${result.severity === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-green-100 text-green-600'}`}>
                         {result.severity === 'high' ? <AlertCircle size={32} /> : <CheckCircle2 size={32} />}
