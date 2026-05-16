@@ -125,7 +125,7 @@ export const Analyzer = () => {
               {image && !loading && (
                 <div className="flex justify-center">
                   <button onClick={runAnalysis} className="bg-green-600 text-white px-12 py-5 rounded-2xl font-bold flex items-center gap-3 shadow-2xl hover:bg-green-700 transition-all active:scale-95 text-lg">
-                    <Search size={24} /> Get Perfect Answer from Google
+                    <Search size={24} /> Fetch Answer from Google Search Engine
                   </button>
                 </div>
               )}
@@ -133,7 +133,7 @@ export const Analyzer = () => {
               {loading && (
                 <div className="flex flex-col items-center gap-4 py-8">
                   <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
-                  <p className="font-bold text-green-700 animate-pulse uppercase tracking-[0.2em] text-xs">Consulting Google Agriculture Database...</p>
+                  <p className="font-bold text-green-700 animate-pulse uppercase tracking-[0.2em] text-xs">Fetching from Google Knowledge Hub...</p>
                 </div>
               )}
             </div>
@@ -145,7 +145,7 @@ export const Analyzer = () => {
                   </div>
                   <div className="flex-1 space-y-6">
                     <div>
-                      <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">Google Knowledge Hub Result</p>
+                      <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">Google Search Intelligence</p>
                       <h3 className="text-4xl font-black text-slate-900">{result.name}</h3>
                       <p className={`text-xs font-bold uppercase tracking-tighter ${result.status === 'disease' ? 'text-rose-500' : 'text-emerald-500'}`}>Status: {result.status}</p>
                     </div>
