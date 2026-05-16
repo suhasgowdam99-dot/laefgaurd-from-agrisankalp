@@ -4,8 +4,8 @@ export interface DetectionResult {
   name: string;
   confidence: string;
   advice: string;
-  severity: 'low' | 'medium' | 'high' | 'none';
-  status?: 'success' | 'error';
+  status: 'disease' | 'healthy';
+  error?: boolean;
 }
 
 export const analyzeLeaf = async (base64Image: string): Promise<DetectionResult> => {
@@ -19,14 +19,19 @@ export const analyzeLeaf = async (base64Image: string): Promise<DetectionResult>
     const result = await response.json();
 
     if (!response.ok) {
-      // Show the specific 'details' from Google instead of a generic message
-      const specificError = result.details || result.error || 'Unknown Google Hub Error';
-      throw new Error(`Google API Reject: ${specificError}`);
+      throw new Error(result.details || result.advice || 'Google Hub Failure');
     }
 
-    return { ...result, status: 'success' };
+    return result;
+
   } catch (err: any) {
-    console.error("Diagnostic Error:", err);
-    throw err;
+    console.error("Neural Error:", err);
+    return {
+      name: "Search Failure",
+      confidence: "0%",
+      status: 'healthy',
+      advice: `Error: ${err.message}. Make sure your API key has 'Generative Language API' ENABLED in Google Cloud Console.`,
+      error: true
+    };
   }
 };
