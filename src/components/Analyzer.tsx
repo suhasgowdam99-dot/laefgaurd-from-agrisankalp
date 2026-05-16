@@ -274,11 +274,45 @@ export const Analyzer = () => {
                       </div>
                       <div className="flex gap-4">
                         <button 
-                          onClick={() => window.open('https://www.google.com/searchbyimage?image_url=' + encodeURIComponent(image || ''), '_blank')}
+                          onClick={async () => {
+                            try {
+                              // 1. Convert base64 to Blob
+                              const res = await fetch(image || '');
+                              const blob = await res.blob();
+                              
+                              // 2. Create a file from the blob
+                              const file = new File([blob], "leaf_sample.jpg", { type: "image/jpeg" });
+
+                              // 3. Create a hidden form to POST to Google
+                              const form = document.createElement('form');
+                              form.method = 'POST';
+                              form.action = 'https://www.google.com/searchbyimage/upload';
+                              form.enctype = 'multipart/form-data';
+                              form.target = '_blank';
+
+                              const fileInput = document.createElement('input');
+                              fileInput.type = 'file';
+                              fileInput.name = 'encoded_image';
+                              
+                              // Use a DataTransfer object to simulate a file selection
+                              const dataTransfer = new DataTransfer();
+                              dataTransfer.items.add(file);
+                              fileInput.files = dataTransfer.files;
+
+                              form.appendChild(fileInput);
+                              document.body.appendChild(form);
+                              form.submit();
+                              document.body.removeChild(form);
+                            } catch (e) {
+                              console.error("Lens launch failed", e);
+                              alert("Redirecting to Google...");
+                              window.open('https://www.google.com/search?q=plant+disease+identifier', '_blank');
+                            }
+                          }}
                           className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all flex items-center gap-3"
                         >
                           <Search size={20} />
-                          Search on Google Lens
+                          Verify with Live Google Lens
                         </button>
                       </div>
                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${result.severity === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-green-100 text-green-600'}`}>
