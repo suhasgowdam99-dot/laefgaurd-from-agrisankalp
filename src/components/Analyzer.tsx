@@ -145,7 +145,11 @@ export const Analyzer = () => {
                   </div>
                   <div className="flex-1 space-y-6">
                     <div>
-                      <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">Google Search Intelligence</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-[10px] font-black text-green-600 uppercase tracking-widest">Google Search Intelligence</p>
+                        <div className="h-1 w-1 bg-green-400 rounded-full animate-ping" />
+                        <span className="text-[9px] text-slate-400 font-bold uppercase">Live Fetch: {new Date().toLocaleTimeString()}</span>
+                      </div>
                       <h3 className="text-4xl font-black text-slate-900">{result.name}</h3>
                       <p className={`text-xs font-bold uppercase tracking-tighter ${result.status === 'disease' ? 'text-rose-500' : 'text-emerald-500'}`}>Status: {result.status}</p>
                     </div>
