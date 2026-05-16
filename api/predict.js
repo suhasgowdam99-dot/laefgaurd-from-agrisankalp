@@ -16,13 +16,13 @@ export default async function handler(req, res) {
   try {
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
 
-    // Direct Google Cloud Vision Path
-    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // Using Gemini 1.5 Pro for the 'Perfect' answer
+    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
     
     const payload = {
       contents: [{
         parts: [
-          { text: "Analyze this plant leaf. Return ONLY a JSON object. No other text. If it's a disease, name it and give a cure. If it's healthy, say 'Healthy'. Structure: { 'status': 'disease/healthy', 'name': 'Exact Name', 'advice': 'Cure steps', 'confidence': '...%' }" },
+          { text: "Act as a world-leading agricultural plant pathologist. Analyze this leaf image with 100% precision. If the plant is diseased, provide the exact scientific name and a highly detailed step-by-step cure. If it is healthy, state 'Healthy Specimen'. You MUST return ONLY a JSON object with this exact structure: { 'status': 'disease' or 'healthy', 'name': 'Scientific Name', 'confidence': '99%', 'advice': 'Detailed cure instructions', 'severity': 'high/medium/low/none' }" },
           { inline_data: { mime_type: "image/jpeg", data: base64Data } }
         ]
       }]

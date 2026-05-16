@@ -322,23 +322,23 @@ export const Analyzer = () => {
                     
                     <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 relative">
                       <div className="absolute -top-3 left-8 bg-white border border-slate-100 px-4 py-1 rounded-lg text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        Neural Treatment Protocol
+                        Diagnosis & Protocol
                       </div>
                       <h4 className="font-extrabold text-slate-900 mb-3 flex items-center gap-3 text-lg">
-                        Expert Advice
+                        Professional Advice
                       </h4>
                       <p className="text-slate-600 leading-relaxed text-lg font-medium">{result.advice}</p>
                     </div>
 
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
                       <button 
                         onClick={() => { setResult(null); setImage(null); }}
-                        className="flex-1 bg-slate-900 text-white py-5 rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-lg active:scale-95"
+                        className="flex-1 bg-green-600 text-white py-5 rounded-2xl font-bold hover:bg-green-700 transition-all shadow-lg active:scale-95"
                       >
-                        Reset & Scan New
+                        Scan New Sample
                       </button>
-                      <button className="px-8 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-50 transition-all shadow-sm active:scale-95">
-                         Save Result
+                      <button className="flex-1 bg-slate-900 text-white py-5 rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-lg active:scale-95">
+                         Print Laboratory Report
                       </button>
                     </div>
                   </div>
