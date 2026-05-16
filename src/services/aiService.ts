@@ -19,14 +19,14 @@ export const analyzeLeaf = async (base64Image: string): Promise<DetectionResult>
     const result = await response.json();
 
     if (!response.ok) {
-      throw new Error(result.details || result.error || 'The Google Knowledge link failed.');
+      // Show the specific 'details' from Google instead of a generic message
+      const specificError = result.details || result.error || 'Unknown Google Hub Error';
+      throw new Error(`Google API Reject: ${specificError}`);
     }
 
     return { ...result, status: 'success' };
   } catch (err: any) {
-    console.error("Real Error Fetching Result:", err);
-    // CRITICAL: We throw the error so the UI shows the red error box 
-    // instead of showing a 'fake' healthy result.
+    console.error("Diagnostic Error:", err);
     throw err;
   }
 };
