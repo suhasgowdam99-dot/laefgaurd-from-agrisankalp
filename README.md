@@ -13,16 +13,7 @@ A production-ready precision agritech landing page and AI detection tool.
 2. `node server/index.js` (Backend)
 3. `npm run dev` (Frontend)
 
-## 📦 Deployment & AI Setup
-1. **GitHub**: Push this repo to your GitHub.
-2. **Vercel**: Import the repo to Vercel.
-3. **AI Precision Mode**:
-   - Go to [Hugging Face](https://huggingface.co/settings/tokens).
-   - Create a free "Read" token.
-   - In Vercel Project Settings, add an Environment Variable:
-     - Key: `VITE_HF_TOKEN`
-     - Value: `your_token_here`
-4. **Deploy**: Redeploy your project. The website will now use the **Precision Neural Network** for detection!
+
 
 
 
@@ -46,9 +37,6 @@ LeafGuard AI is a complete full-stack solution for modern farmers, combining AI-
 2. `node server/index.js` (Backend)
 3. `npm run dev` (Frontend)
 
-## 🔑 Login
-- **Email**: `farmer@leafguard.ai`
-- **Password**: `password123`
 
 
 A comprehensive, production-ready SaaS for managing field service operations.
@@ -64,14 +52,6 @@ A comprehensive, production-ready SaaS for managing field service operations.
 - **Backend**: Node.js, Express, JWT, Helmet.
 - **Validation**: Zod (Schema-based).
 
-## 💻 Local Setup
-1. `npm install`
-2. `node server/index.js` (Backend)
-3. `npm run dev` (Frontend)
-
-## 🔑 Demo Credentials
-- **Email**: `admin@voltflow.com`
-- **Password**: `password123`
 
 
 A complete, responsive SaaS landing page with a Node.js/Express backend.
@@ -100,23 +80,7 @@ node server/index.js
 npm run dev
 ```
 
-## 🏗️ Deployment
 
-### Vercel / Netlify
-1. Push your code to a GitHub repository.
-2. Connect the repository to Vercel/Netlify.
-3. The build command is `npm run build` and the output directory is `dist`.
-4. Set the `VITE_API_URL` environment variable to your deployed backend URL.
-
-### AWS / DigitalOcean (Docker)
-1. Build the image:
-   ```bash
-   docker build -t nexussaas-app .
-   ```
-2. Run the container:
-   ```bash
-   docker run -p 5000:5000 nexussaas-app
-   ```
 
 ## 🛠️ Tech Stack
 - **Frontend**: React 18, Vite, Tailwind CSS, Framer Motion, Lucide Icons.
