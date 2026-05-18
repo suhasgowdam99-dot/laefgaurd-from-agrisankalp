@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Camera, RefreshCw, X, Search, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { analyzeWithCustomModel } from '../services/localAi';
 
 export const Analyzer = () => {
   const [image, setImage] = useState<string | null>(null);
@@ -50,15 +51,17 @@ export const Analyzer = () => {
     setLoading(true);
     setResult(null);
     try {
-      const response = await fetch('/api/predict', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image })
-      });
-      const data = await response.json();
+      // Small delay for premium feel
+      await new Promise(r => setTimeout(r, 1000));
+      const data = await analyzeWithCustomModel(image, (msg) => console.log(msg));
       setResult(data);
+
+      // SILENT HARDWARE ACTUATION
+      if ((data as any).status === 'disease') {
+        fetch('/api/iot?action=spray&status=1').catch(() => {});
+      }
     } catch (e) {
-      alert("Error contacting Google Brain.");
+      alert("Custom Neural Engine Error: Ensure model files are in /public/model/");
     } finally {
       setLoading(false);
     }

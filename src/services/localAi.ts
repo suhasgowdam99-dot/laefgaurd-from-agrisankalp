@@ -1,77 +1,85 @@
 import * as tf from '@tensorflow/tfjs';
-import * as mobilenet from '@tensorflow-models/mobilenet';
 
 export interface DetectionResult {
   name: string;
   confidence: string;
   advice: string;
   severity: 'low' | 'medium' | 'high' | 'none';
-  source: string;
+  status?: 'success' | 'error';
 }
 
-// Agricultural Intelligence Dictionary
-const AGRI_INTEL: Record<string, { name: string, advice: string, severity: 'low' | 'medium' | 'high' | 'none' }> = {
-  "leaf": { name: "Healthy Plant Sample", advice: "Neural scan confirms optimal cell structure. No disease detected.", severity: "none" },
-  "spotted": { name: "Bacterial Leaf Spot", advice: "Detected necrotic patterns. Apply copper-based fungicides.", severity: "high" },
-  "white": { name: "Powdery Mildew", advice: "Fungal coating detected. Improve airflow and use organic sulfur.", severity: "medium" },
-  "yellow": { name: "Early Stage Blight", advice: "Isolate the plant immediately. Remove infected foliage.", severity: "high" },
-  "brown": { name: "Pathogenic Rust", advice: "Rust spores identified. Use neem oil and keep foliage dry.", severity: "medium" }
-};
+// YOUR EXACT 28-CLASS TRAINING ORDER
+const LABELS_28 = [
+  "Apple Scab",                     // 0
+  "Apple Black Rot",                 // 1
+  "Apple Cedar Rust",                // 2
+  "Apple Healthy",                   // 3
+  "Blueberry Healthy",               // 4
+  "Cherry Healthy",                  // 5
+  "Cherry Powdery Mildew",           // 6
+  "Corn Gray Leaf Spot",             // 7
+  "Corn Common Rust",                // 8
+  "Corn Healthy",                    // 9
+  "Corn Northern Leaf Blight",       // 10
+  "Grape Black Rot",                 // 11
+  "Grape Esca (Black Measles)",      // 12
+  "Grape Healthy",                   // 13
+  "Grape Leaf Blight",               // 14
+  "Citrus Greening (Orange)",        // 15
+  "Peach Bacterial Spot",            // 16
+  "Peach Healthy",                   // 17
+  "Pepper Bell Bacterial Spot",      // 18
+  "Pepper Bell Healthy",             // 19
+  "Potato Early Blight",             // 20
+  "Potato Healthy",                  // 21
+  "Potato Late Blight",              // 22
+  "Raspberry Healthy",               // 23
+  "Soybean Healthy",                 // 24
+  "Squash Powdery Mildew",           // 25
+  "Strawberry Leaf Scorch",          // 26 (Assuming standard PlantVillage end)
+  "Strawberry Healthy"               // 27
+];
 
-let model: any = null;
+let customModel: tf.LayersModel | null = null;
 
-export const analyzeLocally = async (imageSrc: string, onProgress?: (msg: string) => void): Promise<DetectionResult> => {
+export const analyzeWithCustomModel = async (imageSrc: string, onProgress?: (msg: string) => void): Promise<DetectionResult> => {
   try {
-    if (!model) {
-      if (onProgress) onProgress("Initializing Neural Engine...");
-      await tf.ready();
-      model = await mobilenet.load();
+    if (!customModel) {
+      if (onProgress) onProgress("Syncing Custom 28-Class Engine...");
+      customModel = await tf.loadLayersModel('/model/model.json');
     }
 
-    if (onProgress) onProgress("Scanning Neural Patterns...");
+    if (onProgress) onProgress("Neural Analysis in Progress...");
     
-    // Create image element for TF.js
     const img = new Image();
     img.src = imageSrc;
     await new Promise(r => img.onload = r);
 
-    const predictions = await model.classify(img);
+    const tensor = tf.browser.fromPixels(img)
+      .resizeNearestNeighbor([224, 224])
+      .toFloat()
+      .div(tf.scalar(255)) // Normalize pixels
+      .expandDims();
     
-    if (predictions && predictions.length > 0) {
-      const top = predictions[0];
-      const label = top.className.toLowerCase();
-      const confidence = (top.probability * 100).toFixed(1) + "%";
+    const predictions = await (customModel.predict(tensor) as tf.Tensor).data();
+    const topIndex = Array.from(predictions).indexOf(Math.max(...Array.from(predictions)));
+    
+    const name = LABELS_28[topIndex] || "Unknown Specimen";
+    const confidence = (predictions[topIndex] * 100).toFixed(1) + "%";
+    const isHealthy = name.toLowerCase().includes('healthy');
 
-      // Logic to map general classes to plant diseases
-      let finalResult: any = { 
-        name: top.className.split(',')[0], 
-        advice: "Deep scan complete. Patterns suggest standard foliage growth. Monitor for changes.", 
-        severity: "low"
-      };
-
-      for (const key in AGRI_INTEL) {
-        if (label.includes(key)) {
-          finalResult = AGRI_INTEL[key];
-          break;
-        }
-      }
-
-      return {
-        ...finalResult,
-        confidence,
-        source: "TF Neural Hub"
-      };
-    }
-
-    throw new Error("No patterns detected");
-  } catch (err: any) {
-    console.error("TF Error:", err);
     return {
-      name: "Neural Insight",
-      confidence: "91.2%",
-      advice: "Live link stable. Foliage appears healthy with minor environmental stress.",
-      severity: "low",
-      source: "Neural Backup"
-    };
+      name: name,
+      confidence: confidence,
+      status: isHealthy ? 'healthy' : 'disease',
+      severity: isHealthy ? 'none' : 'high',
+      advice: isHealthy 
+        ? "Plant shows optimal cell structure. No intervention required." 
+        : `Detection: ${name}. Professional protocol suggests targeted pesticide application.`
+    } as any;
+
+  } catch (err: any) {
+    console.error("Custom Engine Error:", err);
+    throw new Error("Ensure model.json and bin files are in /public/model/");
   }
 };
