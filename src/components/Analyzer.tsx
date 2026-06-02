@@ -13,6 +13,7 @@ export const Analyzer = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const requestRef = useRef<number>();
   const lastDetectionRef = useRef<number>(0);
+  const isProcessingRef = useRef<boolean>(false);
 
   const startCamera = async () => {
     setIsCameraActive(true);
@@ -34,33 +35,36 @@ export const Analyzer = () => {
     }
     setIsCameraActive(false);
     if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    isProcessingRef.current = false;
   };
 
   const detectFrame = async () => {
-    if (!videoRef.current || !canvasRef.current || !isCameraActive) return;
+    if (!videoRef.current || !canvasRef.current || !isCameraActive || isProcessingRef.current) {
+      if (isCameraActive) requestRef.current = requestAnimationFrame(detectFrame);
+      return;
+    }
 
     const now = Date.now();
-    // Throttle detection to every 800ms to avoid freezing the UI
-    if (now - lastDetectionRef.current > 800) {
+    // Throttle detection to every 2 seconds to allow Gemini Flash to respond
+    if (now - lastDetectionRef.current > 2000) {
       const ctx = canvasRef.current.getContext('2d');
       if (ctx) {
+        isProcessingRef.current = true;
         canvasRef.current.width = videoRef.current.videoWidth;
         canvasRef.current.height = videoRef.current.videoHeight;
         ctx.drawImage(videoRef.current, 0, 0);
         
-        const imageUri = canvasRef.current.toDataURL('image/jpeg', 0.8);
+        const imageUri = canvasRef.current.toDataURL('image/jpeg', 0.6);
         
         try {
           const data = await runCustomInference(imageUri);
-          if (data.status === 'disease' && parseFloat(data.confidence) > 70) {
-            setLiveResult(data);
-          } else if (parseFloat(data.confidence) < 30) {
-            setLiveResult(null);
-          }
+          setLiveResult(data);
         } catch (e) {
           console.error("Live detection error:", e);
+        } finally {
+          isProcessingRef.current = false;
+          lastDetectionRef.current = now;
         }
-        lastDetectionRef.current = now;
       }
     }
     

@@ -16,21 +16,28 @@ export default async function handler(req, res) {
   try {
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
 
-    // Use Google's most powerful vision engine to 'Search' for the answer
-    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+    // Use Gemini 1.5 Flash for lightning-fast live responses
+    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const payload = {
       contents: [{
         parts: [
-          { text: "Search the Google Agriculture Database for this image. Identify the exact plant disease and provide a professional cure. Return ONLY a JSON object: { 'name': 'Exact Name from Google Search', 'status': 'disease/healthy', 'advice': 'Precise Google cure instructions.', 'confidence': '99%' }" },
+          { text: "Analyze this plant leaf. Identify if there is a disease. Return ONLY a JSON object: { 'name': 'Plant/Disease Name', 'status': 'disease/healthy', 'advice': 'Short cure instruction', 'confidence': 'Percentage%' }" },
           { inline_data: { mime_type: "image/jpeg", data: base64Data } }
         ]
       }]
     };
 
-    const response = await axios.post(API_URL, payload, { timeout: 30000 });
-    const rawText = response.data.candidates[0].content.parts[0].text;
-    const finalResult = JSON.parse(rawText.replace(/```json/g, "").replace(/```/g, "").trim());
+    const response = await axios.post(API_URL, payload, { timeout: 15000 });
+    
+    if (!response.data.candidates || response.data.candidates.length === 0) {
+        throw new Error("No analysis candidates returned");
+    }
+
+    let rawText = response.data.candidates[0].content.parts[0].text;
+    // Clean up potential markdown formatting
+    rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+    const finalResult = JSON.parse(rawText);
 
     // THING SPEAK SILENT BRIDGE
     const TS_KEY = process.env.TS_WRITE_KEY;
