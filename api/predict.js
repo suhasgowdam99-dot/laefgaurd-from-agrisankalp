@@ -16,13 +16,13 @@ export default async function handler(req, res) {
   try {
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
 
-    // Use Gemini 1.5 Flash for lightning-fast live responses
-    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // Use v1beta for better compatibility with newer models like Flash
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const payload = {
       contents: [{
         parts: [
-          { text: "Analyze this plant leaf. Identify if there is a disease. Return ONLY a JSON object: { 'name': 'Plant/Disease Name', 'status': 'disease/healthy', 'advice': 'Short cure instruction', 'confidence': 'Percentage%' }" },
+          { text: "Identify the plant and any disease in this image. Return ONLY a JSON object: { 'name': 'Plant Name', 'status': 'disease/healthy', 'advice': 'Precise cure or care instructions', 'confidence': '95%' }" },
           { inline_data: { mime_type: "image/jpeg", data: base64Data } }
         ]
       }]
@@ -31,29 +31,24 @@ export default async function handler(req, res) {
     const response = await axios.post(API_URL, payload, { timeout: 15000 });
     
     if (!response.data.candidates || response.data.candidates.length === 0) {
-        throw new Error("No analysis candidates returned");
+        throw new Error("Gemini: No analysis candidates found.");
     }
 
     let rawText = response.data.candidates[0].content.parts[0].text;
-    // Clean up potential markdown formatting
     rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
     const finalResult = JSON.parse(rawText);
-
-    // THING SPEAK SILENT BRIDGE
-    const TS_KEY = process.env.TS_WRITE_KEY;
-    if (TS_KEY && finalResult.status === 'disease') {
-      axios.get(`https://api.thingspeak.com/update?api_key=${TS_KEY}&field3=1`).catch(() => {});
-    }
 
     return res.status(200).json(finalResult);
 
   } catch (error) {
-    // If Google fails, return a professional healthy result so the site stays clean
+    console.error("Gemini API Error:", error.response?.data || error.message);
+    
+    // Return the actual error to the UI for debugging
     return res.status(200).json({
-      name: "Search Complete: Healthy Foliage",
+      name: "Intelligence Hub Error",
       status: "healthy",
-      advice: "Google Knowledge Hub indicates optimal plant health. Continue regular irrigation.",
-      confidence: "98.2%"
+      advice: `Technical Details: ${JSON.stringify(error.response?.data || error.message)}`,
+      confidence: "0%"
     });
   }
 }
