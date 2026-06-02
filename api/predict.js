@@ -16,8 +16,8 @@ export default async function handler(req, res) {
   try {
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
 
-    // Use v1beta for better compatibility with newer models like Flash
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // Use v1 and gemini-1.5-flash (most stable for vision)
+    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const payload = {
       contents: [{
@@ -30,8 +30,8 @@ export default async function handler(req, res) {
 
     const response = await axios.post(API_URL, payload, { timeout: 15000 });
     
-    if (!response.data.candidates || response.data.candidates.length === 0) {
-        throw new Error("Gemini: No analysis candidates found.");
+    if (!response.data || !response.data.candidates || response.data.candidates.length === 0) {
+        throw new Error("Gemini returned no results. Check if the image is clear.");
     }
 
     let rawText = response.data.candidates[0].content.parts[0].text;
@@ -43,11 +43,12 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("Gemini API Error:", error.response?.data || error.message);
     
-    // Return the actual error to the UI for debugging
+    const errorDetails = error.response?.data?.error?.message || error.message;
+
     return res.status(200).json({
       name: "Intelligence Hub Error",
       status: "healthy",
-      advice: `Technical Details: ${JSON.stringify(error.response?.data || error.message)}`,
+      advice: `Technical Details: ${errorDetails}. Please ensure 'Generative Language API' is enabled in Google Cloud.`,
       confidence: "0%"
     });
   }
