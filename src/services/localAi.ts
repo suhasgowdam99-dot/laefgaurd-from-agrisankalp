@@ -16,62 +16,43 @@ let pipe: any = null;
 
 export const runCustomInference = async (imageSrc: string, onMsg?: (m: string) => void): Promise<DetectionResult> => {
   try {
-    if (!pipe) {
-      if (onMsg) onMsg("Loading Neural Vision Engine...");
-      // Using CLIP ViT-B/32 for high-quality image embeddings
-      pipe = await pipeline('feature-extraction', 'Xenova/clip-vit-base-patch32');
-    }
+    if (onMsg) onMsg("Querying Gemini Neural Hub...");
 
-    if (onMsg) onMsg("Extracting Visual Signature...");
-    const output = await pipe(imageSrc);
-    const embedding = Array.from(output.data);
-
-    if (onMsg) onMsg("Searching Database...");
-    // Search Supabase using the match_disease_images function
-    const { data, error } = await supabase.rpc('match_disease_images', {
-      query_embedding: embedding,
-      match_threshold: 0.5,
-      match_count: 1
+    // Send the image to our Gemini API proxy
+    const response = await fetch('/api/predict', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ image: imageSrc })
     });
 
-    if (error) throw error;
+    const data = await response.json();
 
-    if (!data || data.length === 0) {
-      return {
-        name: "Unknown Signature",
-        confidence: "0%",
-        status: 'healthy',
-        severity: 'none',
-        advice: "No matching patterns found in our database.",
-        description: "The captured image does not match any known diseases in our high-cost plant dataset.",
-        treatment: "Continue regular monitoring."
-      };
-    }
+    if (!response.ok) throw new Error(data.error || "Gemini Hub Offline");
 
-    const match = data[0];
-    const confidence = (match.similarity * 100).toFixed(1) + "%";
-
+    // Map Gemini response to our UI structure
     return {
-      name: match.name,
-      confidence,
-      status: 'disease',
-      severity: match.similarity > 0.8 ? 'high' : 'medium',
-      advice: match.treatment,
-      description: match.description,
-      treatment: match.treatment,
-      image_url: match.image_url
+      name: data.name || "Unknown Condition",
+      confidence: data.confidence || "90%",
+      status: data.status || 'healthy',
+      severity: data.status === 'disease' ? 'high' : 'none',
+      advice: data.advice || "No specific treatment required.",
+      description: data.advice, // Gemini combines these
+      treatment: data.advice,
+      image_url: undefined // Gemini results are generative
     };
 
   } catch (err: any) {
-    console.error("Vector Search Error:", err);
+    console.error("Gemini Analysis Error:", err);
     return {
-      name: "Processing Error",
+      name: "Neural Link Error",
       confidence: "0%",
       status: 'healthy',
       severity: 'none',
-      advice: "Ensure your internet connection is stable.",
-      description: "We encountered an error while processing the image signature.",
-      treatment: "Please try again."
+      advice: "Ensure your Gemini API Key is active in Vercel settings.",
+      description: "We encountered an error while reaching the Google Intelligence Hub.",
+      treatment: "Please check your network or API configuration."
     };
   }
 };
