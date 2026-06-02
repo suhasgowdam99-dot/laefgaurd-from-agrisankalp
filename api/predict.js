@@ -16,8 +16,8 @@ export default async function handler(req, res) {
   try {
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
 
-    // Use v1 and gemini-1.5-flash (most stable for vision)
-    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // Upgrading to Gemini 3.5 Flash (Standard stable model for 2026)
+    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
     
     const payload = {
       contents: [{
