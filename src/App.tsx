@@ -1,21 +1,55 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { Stats } from './components/Stats';
 import { Analyzer } from './components/Analyzer';
 import { SensorDashboard } from './components/SensorDashboard';
 import { HowItWorks } from './components/HowItWorks';
+import axios from 'axios';
 
-const MOCK_SENSOR_DATA = {
-  current: { temp: 24.5, humidity: 62.8 },
-  history: Array.from({ length: 12 }, (_, i) => ({
-    time: `${i}:00`,
-    temp: 22 + Math.random() * 5,
-    humidity: 60 + Math.random() * 10
-  }))
-};
+const TS_CHANNEL_ID = '3132304';
+const TS_READ_KEY = 'SIHPL0DF113P0NA2';
 
 function App() {
+  const [sensorData, setSensorData] = useState({
+    current: { temp: 0, humidity: 0 },
+    history: []
+  });
+
+  const fetchSensorData = async () => {
+    try {
+      const response = await axios.get(
+        `https://api.thingspeak.com/channels/${TS_CHANNEL_ID}/feeds.json?api_key=${TS_READ_KEY}&results=20`
+      );
+      
+      const feeds = response.data.feeds;
+      if (feeds && feeds.length > 0) {
+        const latest = feeds[feeds.length - 1];
+        const history = feeds.map((f: any) => ({
+          time: new Date(f.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          temp: parseFloat(f.field1) || 0,
+          humidity: parseFloat(f.field2) || 0
+        }));
+
+        setSensorData({
+          current: {
+            temp: parseFloat(latest.field1) || 0,
+            humidity: parseFloat(latest.field2) || 0
+          },
+          history: history as any
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching ThingSpeak data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSensorData();
+    const interval = setInterval(fetchSensorData, 15000); // Poll every 15s
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen bg-white font-sans selection:bg-green-100 selection:text-green-900 overflow-x-hidden">
       <Navbar />
@@ -28,7 +62,7 @@ function App() {
                <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">Environmental Telemetry</h2>
                <p className="text-slate-500 font-medium mt-2">Real-time data from your IoT sensor network</p>
             </div>
-            <SensorDashboard data={MOCK_SENSOR_DATA} />
+            <SensorDashboard data={sensorData} />
           </div>
         </section>
         <HowItWorks />
