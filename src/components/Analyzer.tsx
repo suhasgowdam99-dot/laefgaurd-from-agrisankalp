@@ -8,6 +8,8 @@ export const Analyzer = () => {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [result, setResult] = useState<DetectionResult | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -46,8 +48,10 @@ export const Analyzer = () => {
     }
 
     const now = Date.now();
-    // Throttle for Gemini
-    if (now - lastDetectionRef.current > 3000) {
+    const timeSinceLast = now - lastDetectionRef.current;
+
+    // Increased to 15 seconds for Google Free Tier Quota (5/min)
+    if (timeSinceLast > 15000) {
       const ctx = canvasRef.current.getContext('2d');
       if (ctx) {
         isProcessingRef.current = true;
@@ -61,6 +65,7 @@ export const Analyzer = () => {
           const data = await runCustomInference(imageUri);
           setResult(data);
           setImage(imageUri);
+          setCooldown(0);
         } catch (e) {
           console.error("Live detection error:", e);
         } finally {
@@ -68,6 +73,8 @@ export const Analyzer = () => {
           lastDetectionRef.current = now;
         }
       }
+    } else {
+      setCooldown(Math.ceil((15000 - timeSinceLast) / 1000));
     }
     
     if (isCameraActive) {
@@ -105,8 +112,8 @@ export const Analyzer = () => {
                     <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
                     <div className="absolute inset-0 pointer-events-none border-2 border-white/20 rounded-[2.5rem]" />
                     <button onClick={stopCamera} className="absolute top-6 right-6 p-2 bg-black/40 text-white rounded-full"><X size={20}/></button>
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full text-[10px] font-bold text-white uppercase tracking-widest animate-pulse">
-                       Scanning Live Feed...
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full text-[10px] font-bold text-white uppercase tracking-widest text-center">
+                       {cooldown > 0 ? `Neural Cooldown: ${cooldown}s` : 'Analyzing Foliage...'}
                     </div>
                   </>
                 ) : image ? (
