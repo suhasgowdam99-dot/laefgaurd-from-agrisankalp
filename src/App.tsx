@@ -54,8 +54,17 @@ function App() {
     <div className="min-h-screen bg-white font-sans selection:bg-green-100 selection:text-green-900 overflow-x-hidden">
       <Navbar />
       <main>
-        <Hero sensorData={sensorData} />
+        <Hero />
         <Stats />
+        <section className="py-24 bg-white border-b border-slate-100">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center mb-16">
+               <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">Environmental Telemetry</h2>
+               <p className="text-slate-500 font-medium mt-2">Real-time data from your IoT sensor network</p>
+            </div>
+            <SensorDashboard data={sensorData} />
+          </div>
+        </section>
         <HowItWorks />
         <Analyzer />
       </main>

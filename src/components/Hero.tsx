@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Droplets, Microscope, Thermometer } from 'lucide-react';
+import { ArrowRight, Droplets, Microscope } from 'lucide-react';
 
-export const Hero = ({ sensorData }: { sensorData: any }) => {
+export const Hero = () => {
   const scrollToDetect = () => {
     document.getElementById('detect')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -43,7 +43,7 @@ export const Hero = ({ sensorData }: { sensorData: any }) => {
             transition={{ delay: 0.2 }}
             className="text-xl text-slate-600 max-w-lg leading-relaxed font-medium"
           >
-            LeafGuard focuses on 4 costly plant varieties: Ficus, Adenium, Carmona, and Bougainvillea. We combine computer vision and Google Intelligence to protect your botanical assets.
+            LeafGuard focuses on 4 costly plant varieties: Ficus, Adenium, Carmona, and Bougainvillea. We combine computer vision and Supabase real-time data to protect your high-value botanical assets.
           </motion.p>
 
           <motion.div 
@@ -82,29 +82,23 @@ export const Hero = ({ sensorData }: { sensorData: any }) => {
             />
           </motion.div>
 
-          {/* Floating Sensor Card 1 - Humidity */}
+          {/* Floating UI Cards - Strict Spec Replication */}
           <motion.div
             animate={{ y: [0, -15, 0] }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
             className="absolute -top-4 -right-4 lg:-right-8 z-20 bg-white/80 backdrop-blur-2xl p-6 rounded-[2rem] shadow-2xl border border-white/50 min-w-[220px]"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center">
                 <Droplets size={24} />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">Soil Humidity</p>
-                <p className="text-2xl font-bold text-slate-900 leading-tight">
-                  {sensorData.current.humidity}% 
-                  <span className={`text-xs font-bold ml-1 ${sensorData.current.humidity > 40 ? 'text-green-500' : 'text-orange-500'}`}>
-                    {sensorData.current.humidity > 40 ? '↑ Optimal' : '↓ Low'}
-                  </span>
-                </p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">Humidity</p>
+                <p className="text-2xl font-bold text-slate-900 leading-tight">68% <span className="text-xs text-green-500 font-bold ml-1">↑ High</span></p>
               </div>
             </div>
           </motion.div>
 
-          {/* Floating Sensor Card 2 - Temperature */}
           <motion.div
             animate={{ y: [0, 15, 0] }}
             transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
@@ -112,19 +106,19 @@ export const Hero = ({ sensorData }: { sensorData: any }) => {
           >
             <div className="flex items-center gap-5">
               <div className="w-14 h-14 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center">
-                <Thermometer size={28} />
+                <Microscope size={28} />
               </div>
               <div className="flex-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1.5">Air Temperature</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1.5">Last detection</p>
                 <div className="flex justify-between items-end mb-1.5">
-                  <p className="text-2xl font-bold text-slate-900 leading-none">{sensorData.current.temp}°C</p>
-                  <p className="text-[10px] font-black text-orange-600 leading-none">Live Data</p>
+                  <p className="text-base font-bold text-slate-900 leading-none">Powdery Mildew</p>
+                  <p className="text-[10px] font-black text-orange-600 leading-none">87%</p>
                 </div>
                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: `${(sensorData.current.temp / 50) * 100}%` }}
-                    transition={{ duration: 1 }}
+                    animate={{ width: '87%' }}
+                    transition={{ duration: 1, delay: 1 }}
                     className="h-full bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]" 
                   />
                 </div>
