@@ -5,6 +5,7 @@ import { Stats } from './components/Stats';
 import { Analyzer } from './components/Analyzer';
 import { SensorDashboard } from './components/SensorDashboard';
 import { HowItWorks } from './components/HowItWorks';
+import { LiveAgentOverlay } from './components/LiveAgentOverlay';
 import axios from 'axios';
 
 const TS_CHANNEL_ID = '3132304';
@@ -114,6 +115,7 @@ function App() {
           </div>
         </div>
       </footer>
+      <LiveAgentOverlay />
     </div>
   );
 }
